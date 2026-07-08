@@ -3,11 +3,19 @@ import { useMemo, useState } from "react";
 import { RepoListItem } from "./components/RepoListItem";
 import { useRepoIndex } from "./hooks/useRepoIndex";
 import type { Filter } from "./lib/filters";
-import { attentionReasons, hostOf, matchesFilter } from "./lib/filters";
+import { attentionReasons, hostOf, matchesFilter, ownerOf } from "./lib/filters";
 import type { RepoEntry } from "./lib/types";
 import { pluralize } from "./lib/util";
 
-function FilterDropdown({ hosts, onChange }: { hosts: string[]; onChange: (filter: Filter) => void }) {
+function FilterDropdown({
+  hosts,
+  owners,
+  onChange,
+}: {
+  hosts: string[];
+  owners: string[];
+  onChange: (filter: Filter) => void;
+}) {
   return (
     <List.Dropdown tooltip="Filter repositories" storeValue onChange={(value) => onChange(value as Filter)}>
       <List.Dropdown.Section title="Status">
@@ -23,6 +31,11 @@ function FilterDropdown({ hosts, onChange }: { hosts: string[]; onChange: (filte
           <List.Dropdown.Item key={host} title={host} value={`host:${host}`} icon={Icon.Globe} />
         ))}
       </List.Dropdown.Section>
+      <List.Dropdown.Section title="Owners">
+        {owners.map((owner) => (
+          <List.Dropdown.Item key={owner} title={owner} value={`owner:${owner}`} icon={Icon.Person} />
+        ))}
+      </List.Dropdown.Section>
     </List.Dropdown>
   );
 }
@@ -34,6 +47,7 @@ export default function Command() {
 
   const entries = useMemo(() => ctl.index?.entries ?? [], [ctl.index]);
   const hosts = useMemo(() => [...new Set(entries.map(hostOf))].sort(), [entries]);
+  const owners = useMemo(() => [...new Set(entries.map(ownerOf).filter(Boolean))].sort(), [entries]);
 
   const sections = useMemo(() => {
     const filtered = entries.filter((entry) => matchesFilter(entry, filter));
@@ -53,7 +67,7 @@ export default function Command() {
       isLoading={ctl.isLoading}
       isShowingDetail={showDetail}
       searchBarPlaceholder="Search repositories…"
-      searchBarAccessory={<FilterDropdown hosts={hosts} onChange={setFilter} />}
+      searchBarAccessory={<FilterDropdown hosts={hosts} owners={owners} onChange={setFilter} />}
       navigationTitle={attentionCount > 0 ? `Repositories · ${pluralize(attentionCount, "issue")}` : "Repositories"}
     >
       {entries.length === 0 && ctl.scanError ? (
