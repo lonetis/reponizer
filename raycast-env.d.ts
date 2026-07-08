@@ -13,7 +13,7 @@ type ExtensionPreferences = {
   /** Default Protocol - Protocol used when cloning bare paths (e.g. github.com/owner/repo) and when suggesting origin URLs. */
   "defaultProtocol": "ssh" | "https",
   /** Max Scan Depth - How many folder levels below the root to search for repositories. 3 covers host/owner/repo; increase for GitLab subgroups. */
-  "scanDepth": "3" | "4" | "5" | "6",
+  "scanDepth": "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10",
   /** Editor - Application used by the “Open in Editor” action. */
   "editorApp"?: import("@raycast/api").Application,
   /** Terminal - Application used by the “Open in Terminal” action. */

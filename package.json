@@ -101,7 +101,11 @@
         { "title": "3 levels", "value": "3" },
         { "title": "4 levels", "value": "4" },
         { "title": "5 levels", "value": "5" },
-        { "title": "6 levels", "value": "6" }
+        { "title": "6 levels", "value": "6" },
+        { "title": "7 levels", "value": "7" },
+        { "title": "8 levels", "value": "8" },
+        { "title": "9 levels", "value": "9" },
+        { "title": "10 levels", "value": "10" }
       ]
     },
     {
