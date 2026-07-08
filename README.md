@@ -1,0 +1,74 @@
+# Reponizer
+
+A Raycast extension that keeps a large, structured git repository folder organized. It works with the `host/owner/repo` layout used by [git-get](https://github.com/grdl/git-get) (e.g. `~/repos/github.com/lonetis/reponizer`) and turns Raycast into a fast overview, health check, and toolbox for all your local repositories.
+
+## Features
+
+- **Hierarchical overview** — all repositories grouped by host and owner, instantly searchable
+- **Repo status at a glance** — branch, ahead/behind counts, uncommitted changes, merge conflicts, stashes, and size on disk
+- **Remote auditing** — flags repos whose `origin` does not match their location (and repos without any remote), with one-key auto-fix, folder relocation, and duplicate detection
+- **Remote management** — add, edit, rename, and delete remotes; switch any remote between SSH and HTTPS
+- **Clone into structure** — paste any git URL (or a bare `github.com/owner/repo` path) and it lands in the right folder, keeping the protocol you pasted
+- **Fetch / Pull everything** — bulk fetch and safe fast-forward pulls with progress and a failure report
+- **Offload local copies** — verify a repo is fully pushed, then free its disk space while keeping a placeholder; re-download it anytime
+- **Export / import** — mirror your repository list across machines via a JSON file or the Raycast-synced snapshot
+- **Menu bar health check** *(optional)* — a quiet counter of repositories that need attention
+- **Quick actions** — open in your editor, terminal, Finder, or on the remote host's website; copy paths and URLs; move repos to the Trash
+
+## Getting Started
+
+### Installation
+
+The extension is not in the Raycast Store; install it locally:
+
+1. Install [Raycast](https://raycast.com) and [Node.js](https://nodejs.org) (e.g. `brew install node`).
+2. Clone this repository and install dependencies:
+
+   ```sh
+   git clone https://github.com/lonetis/reponizer.git
+   cd reponizer
+   npm install
+   ```
+
+3. Import it into Raycast:
+
+   ```sh
+   npm run dev
+   ```
+
+   This opens Raycast with the extension installed. You can stop the dev server afterwards (`Ctrl+C`); the extension stays available in Raycast.
+
+### Configuration
+
+Open any Reponizer command, press `⌘ ,`, and adjust the preferences:
+
+- **Repositories Root** — the folder containing all repos (default `~/repos`)
+- **Default Protocol** — SSH (default) or HTTPS; used for suggested origin URLs and bare-path clones
+- **Max Scan Depth** — how deep to search below the root (increase for GitLab subgroups)
+- **Editor / Terminal** — the apps used by the open actions
+
+### Commands
+
+| Command | What it does |
+| --- | --- |
+| **Search Repositories** | The main overview: browse, search, filter, and manage everything |
+| **Clone Repository** | Clone a URL into the correct place in the folder structure |
+| **Fetch All / Pull All Repositories** | Bulk sync; pulls are fast-forward only and skip dirty repos |
+| **Export / Import Repository List** | Mirror the repo list across machines |
+| **Repository Health** | Menu bar overview (disabled by default; enable it in Raycast settings) |
+
+## Tips
+
+- Press `⌘ I` on any repository to toggle a detail panel with remotes, sync state, and sizes.
+- The list opens instantly from cache and rescans in the background; `⌘ R` forces a rescan, `⌥⌘ R` also recomputes folder sizes.
+- **Offloading**: Reponizer refuses to offload a repo with unpushed branches, uncommitted changes, untracked files, or stashes — nothing is ever lost. The freed folder keeps a small `reponizer-offloaded.json` placeholder so you (and the import command) know what belongs there.
+- **Importing on a fresh machine**: choose *Create offloaded placeholders* to mirror the whole structure without downloading anything, then restore repos on demand.
+
+## Troubleshooting
+
+- **SSH authentication fails when fetching/cloning**: Raycast does not inherit your shell environment. Reponizer automatically falls back to the 1Password SSH agent socket if `SSH_AUTH_SOCK` is unset; for other agent setups, configure the agent in `~/.ssh/config` (e.g. via `IdentityAgent`).
+- **Repos are missing from the list**: they may be deeper than the configured scan depth, or inside a hidden folder — both are skipped.
+
+## License
+
+MIT
