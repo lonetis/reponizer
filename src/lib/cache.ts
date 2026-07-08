@@ -35,6 +35,25 @@ export function sizesOf(index: RepoIndex): Map<string, number> {
   return sizes;
 }
 
+let indexWriteLock: Promise<unknown> = Promise.resolve();
+
+/**
+ * All cache updates go through this gate: it serializes read-modify-write cycles
+ * within the process and applies the patch to the freshest cached index rather than
+ * the caller's (possibly stale) snapshot. Without it, a slow bulk operation and a
+ * per-repo action finishing around the same time would clobber each other's writes.
+ */
+async function patchFreshIndex(fallback: RepoIndex, patch: (base: RepoIndex) => RepoIndex): Promise<RepoIndex> {
+  const run = indexWriteLock.then(() => {
+    const base = readCachedIndex(fallback.root) ?? fallback;
+    const next = patch(base);
+    writeCachedIndex(next);
+    return next;
+  });
+  indexWriteLock = run.catch(() => undefined);
+  return run;
+}
+
 /** Full rescan; writes the result to the cache. */
 export async function rebuildIndex(
   root: string,
@@ -46,14 +65,20 @@ export async function rebuildIndex(
     previousSizes: options.reuseSizesFrom ? sizesOf(options.reuseSizesFrom) : undefined,
     onProgress: options.onProgress,
   });
-  writeCachedIndex(index);
-  return index;
+  // A full scan is authoritative; it only needs to be serialized, not merged.
+  return patchFreshIndex(index, () => index);
 }
 
 /** Replace, add, or remove a single entry after an action touched `fullPath`. Writes the cache. */
 export async function reconcilePath(index: RepoIndex, fullPath: string, protocol: Protocol): Promise<RepoIndex> {
   const entry = await inspectPath(index.root, fullPath, protocol);
-  return applyEntryUpdate(index, fullPath, entry);
+  return patchFreshIndex(index, (base) => {
+    const entries = base.entries.filter((e) => e.fullPath !== fullPath);
+    if (entry) entries.push(entry);
+    entries.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+    markDuplicates(entries);
+    return { ...base, entries };
+  });
 }
 
 /** Re-inspect several existing repo entries (statuses after fetch/pull); keeps sizes. Writes the cache. */
@@ -69,19 +94,10 @@ export async function refreshRepoEntries(
     fresh.sizeBytes = index.entries.find((e) => e.fullPath === p)?.sizeBytes;
     updated.set(p, fresh);
   });
-  const entries = index.entries.map((e) => updated.get(e.fullPath) ?? e);
-  markDuplicates(entries);
-  const next: RepoIndex = { ...index, entries };
-  writeCachedIndex(next);
-  return next;
-}
-
-function applyEntryUpdate(index: RepoIndex, fullPath: string, entry: RepoEntry | null): RepoIndex {
-  const entries = index.entries.filter((e) => e.fullPath !== fullPath);
-  if (entry) entries.push(entry);
-  entries.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
-  markDuplicates(entries);
-  const next: RepoIndex = { ...index, entries };
-  writeCachedIndex(next);
-  return next;
+  return patchFreshIndex(index, (base) => {
+    // Entries removed by a concurrent action stay removed: map over the fresh base only.
+    const entries = base.entries.map((e) => updated.get(e.fullPath) ?? e);
+    markDuplicates(entries);
+    return { ...base, entries };
+  });
 }

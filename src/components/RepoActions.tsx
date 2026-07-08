@@ -39,6 +39,17 @@ interface ActionContext {
   setShowDetail: (value: boolean) => void;
 }
 
+/** Failure that carries its own toast action (e.g. “Copy Failures” with a detailed report). */
+class OperationFailure extends Error {
+  constructor(
+    message: string,
+    public readonly primaryAction?: Toast.ActionOptions,
+  ) {
+    super(message);
+    this.name = "OperationFailure";
+  }
+}
+
 async function withToast(title: string, work: (toast: Toast) => Promise<string | void>): Promise<void> {
   const toast = await showToast({ style: Toast.Style.Animated, title });
   try {
@@ -49,10 +60,10 @@ async function withToast(title: string, work: (toast: Toast) => Promise<string |
     toast.style = Toast.Style.Failure;
     toast.title = title;
     toast.message = errorMessage(error);
-    toast.primaryAction = {
-      title: "Copy Error",
-      onAction: () => Clipboard.copy(errorMessage(error)),
-    };
+    toast.primaryAction =
+      error instanceof OperationFailure && error.primaryAction
+        ? error.primaryAction
+        : { title: "Copy Error", onAction: () => Clipboard.copy(errorMessage(error)) };
   }
 }
 
@@ -137,11 +148,10 @@ function SyncActions({ entry, ctl }: ActionContext) {
       await ctl.refreshEntries(repos.map((r) => r.fullPath));
       const { ok, skipped, failed } = summarizeResults(results);
       if (failed.length > 0) {
-        toast.primaryAction = {
+        throw new OperationFailure(`${ok} ok · ${skipped} skipped · ${failed.length} failed`, {
           title: "Copy Failures",
           onAction: () => Clipboard.copy(failureReport(failed)),
-        };
-        throw new Error(`${ok} ok · ${skipped} skipped · ${failed.length} failed`);
+        });
       }
       return `${ok} ok · ${skipped} skipped`;
     });
@@ -272,8 +282,9 @@ function StorageActions({ entry, ctl }: ActionContext) {
     if (!confirmed) return;
     await withToast(`Offloading ${entry.name}…`, async (toast) => {
       toast.message = "Verifying everything is pushed…";
+      let warning: string | undefined;
       try {
-        await offloadRepo(entry);
+        warning = await offloadRepo(entry);
       } catch (error) {
         if (error instanceof OffloadBlockedError) {
           throw new Error(error.problems.join(" · "));
@@ -281,6 +292,7 @@ function StorageActions({ entry, ctl }: ActionContext) {
         throw error;
       }
       await ctl.reconcile(entry.fullPath);
+      if (warning) return warning;
       return entry.sizeBytes !== undefined ? `Freed ${formatBytes(entry.sizeBytes)}` : "Local copy removed";
     });
   };

@@ -19,7 +19,10 @@ export default function Command(props: LaunchProps<{ arguments: { url?: string }
   useEffect(() => {
     if (url) return;
     Clipboard.readText().then((text) => {
-      if (text && planClone(config.root, text, config.defaultProtocol)) setUrl(text.trim());
+      if (text && planClone(config.root, text, config.defaultProtocol)) {
+        // The user may have started typing while the clipboard read was in flight.
+        setUrl((current) => current || text.trim());
+      }
     });
     // Only prefill once on mount.
   }, []);

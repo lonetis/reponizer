@@ -16,7 +16,7 @@ export default function Command() {
     if (!index) return [];
     return index.entries
       .map((entry) => ({ entry, reasons: attentionReasons(entry) }))
-      .filter(({ entry, reasons }) => entry.kind === "repo" && reasons.length > 0);
+      .filter(({ reasons }) => reasons.length > 0);
   }, [index]);
 
   const rescan = async () => {

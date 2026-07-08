@@ -110,6 +110,8 @@ export async function cloneRepo(plan: ClonePlan): Promise<void> {
     if (meaningful.length > 0) {
       throw new Error(`Destination already exists: ${plan.destination}`);
     }
+    // git refuses to clone into a non-empty directory, so clear a stray .DS_Store.
+    await fs.rm(path.join(plan.destination, ".DS_Store"), { force: true });
   }
   await fs.mkdir(path.dirname(plan.destination), { recursive: true });
   await git(path.dirname(plan.destination), ["clone", "--", plan.url, plan.destination], { timeoutMs: 15 * 60_000 });

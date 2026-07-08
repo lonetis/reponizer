@@ -92,7 +92,7 @@ async function findUnsyncedState(repo: Repo): Promise<string[]> {
  * replaced by a folder containing only the offload placeholder file, and then trashed.
  * Throws OffloadBlockedError when any local-only state would be lost.
  */
-export async function offloadRepo(repo: Repo): Promise<void> {
+export async function offloadRepo(repo: Repo): Promise<string | undefined> {
   if (!repo.origin) throw new Error("Repository has no “origin” remote — nothing to re-download it from later.");
 
   const problems = await findUnsyncedState(repo);
@@ -123,7 +123,13 @@ export async function offloadRepo(repo: Repo): Promise<void> {
     await fs.rename(staging, repo.fullPath);
     throw error;
   }
-  await trash(staging);
+  try {
+    await trash(staging);
+  } catch {
+    // The offload itself already succeeded — surface a warning rather than failing.
+    return `Offloaded, but the old copy could not be moved to the Trash — it still sits at ${staging}.`;
+  }
+  return undefined;
 }
 
 /** Create an offload placeholder without a prior local copy (used by import). */
@@ -143,6 +149,17 @@ export async function writeOffloadPlaceholder(
     offloadedAt: new Date().toISOString(),
     note: "Placeholder created by Reponizer import. Use “Restore Local Copy” in Raycast (or git clone the origin URL) to download it.",
   };
+  // A placeholder hides everything below it from future scans, so never drop one
+  // into a folder that already has content.
+  let existing: string[] = [];
+  try {
+    existing = await fs.readdir(fullPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  if (existing.some((n) => n !== ".DS_Store")) {
+    throw new Error(`Folder already exists and is not empty: ${fullPath}`);
+  }
   await fs.mkdir(fullPath, { recursive: true });
   await fs.writeFile(path.join(fullPath, OFFLOAD_FILE), JSON.stringify(data, null, 2) + "\n");
 }
@@ -164,6 +181,8 @@ export async function restoreOffloaded(entry: OffloadedRepo): Promise<void> {
     await git(path.dirname(entry.fullPath), ["clone", "--", data.origin, entry.fullPath], { timeoutMs: 15 * 60_000 });
   } catch (error) {
     // Put the placeholder back so the entry is not lost on a failed clone (e.g. offline).
+    // Remove partial clone debris first, or the next scan would classify this as a broken repo.
+    await fs.rm(entry.fullPath, { recursive: true, force: true });
     await fs.mkdir(entry.fullPath, { recursive: true });
     await fs.writeFile(path.join(entry.fullPath, OFFLOAD_FILE), JSON.stringify(data, null, 2) + "\n");
     throw error;

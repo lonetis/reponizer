@@ -55,6 +55,8 @@ src/
 
 ## Key invariants & conventions
 
+- **Cache writes are serialized and merged against the freshest cached index** (`cache.patchFreshIndex`): every mutation (reconcile / refreshEntries / rebuild) patches what is currently in the cache, not the caller's snapshot — otherwise a slow bulk operation and a per-repo action would clobber each other. Route any new index mutation through it.
+- **Untrusted strings never reach git argv unchecked**: `parseRemoteUrl` rejects leading-dash inputs, `readOffloadFile` validates origin/remotes from placeholder files, clone URLs are passed behind `--`, and remote names must match `^[A-Za-z0-9][\w.-]*$`. Keep these guards when adding git calls.
 - **Remote comparison is protocol-agnostic**: `normalizeRemoteUrl` lowercases host + path and strips `.git`; only host+path identity matters. Expected origin for `host/owner/repo` is derived in `remotes.expectedOriginFor` (returns `undefined` for paths whose first segment has no dot → `unstructured`).
 - **`RemoteCheck.state`** drives all "deviation" UI: `ok | mismatch | no-origin | no-remotes | unstructured | unknown`. Fixes offered: set origin to expected (preserving the current origin's protocol), or relocate the folder to match origin.
 - **Offload safety**: `offload.findUnsyncedState` fetches origin first, then blocks on uncommitted/untracked changes, stashes, and any branch that is ahead, upstream-less, or tracking a gone upstream. The working copy is renamed aside, the placeholder (`reponizer-offloaded.json`, schema `reponizer/offloaded`, includes origin + all remotes + branch + size) is written, then the copy is trashed; failures roll back. Restore refuses non-empty folders and re-creates the placeholder if the clone fails.
