@@ -1,0 +1,62 @@
+/// <reference types="@raycast/api">
+
+/* 🚧 🚧 🚧
+ * This file is auto-generated from the extension's manifest.
+ * Do not modify manually. Instead, update the `package.json` file.
+ * 🚧 🚧 🚧 */
+
+/* eslint-disable @typescript-eslint/ban-types */
+
+type ExtensionPreferences = {
+  /** Repositories Root - Folder containing all repositories, organized as host/owner/repo (git-get layout). */
+  "reposRoot": string,
+  /** Default Protocol - Protocol used when cloning bare paths (e.g. github.com/owner/repo) and when suggesting origin URLs. */
+  "defaultProtocol": "ssh" | "https",
+  /** Max Scan Depth - How many folder levels below the root to search for repositories. 3 covers host/owner/repo; increase for GitLab subgroups. */
+  "scanDepth": "3" | "4" | "5" | "6",
+  /** Editor - Application used by the “Open in Editor” action. */
+  "editorApp"?: import("@raycast/api").Application,
+  /** Terminal - Application used by the “Open in Terminal” action. */
+  "terminalApp"?: import("@raycast/api").Application
+}
+
+/** Preferences accessible in all the extension's commands */
+declare type Preferences = ExtensionPreferences
+
+declare namespace Preferences {
+  /** Preferences accessible in the `search-repos` command */
+  export type SearchRepos = ExtensionPreferences & {}
+  /** Preferences accessible in the `clone-repo` command */
+  export type CloneRepo = ExtensionPreferences & {}
+  /** Preferences accessible in the `fetch-all` command */
+  export type FetchAll = ExtensionPreferences & {}
+  /** Preferences accessible in the `pull-all` command */
+  export type PullAll = ExtensionPreferences & {}
+  /** Preferences accessible in the `export-repos` command */
+  export type ExportRepos = ExtensionPreferences & {}
+  /** Preferences accessible in the `import-repos` command */
+  export type ImportRepos = ExtensionPreferences & {}
+  /** Preferences accessible in the `menubar-status` command */
+  export type MenubarStatus = ExtensionPreferences & {}
+}
+
+declare namespace Arguments {
+  /** Arguments passed to the `search-repos` command */
+  export type SearchRepos = {}
+  /** Arguments passed to the `clone-repo` command */
+  export type CloneRepo = {
+  /** Repository URL */
+  "url": string
+}
+  /** Arguments passed to the `fetch-all` command */
+  export type FetchAll = {}
+  /** Arguments passed to the `pull-all` command */
+  export type PullAll = {}
+  /** Arguments passed to the `export-repos` command */
+  export type ExportRepos = {}
+  /** Arguments passed to the `import-repos` command */
+  export type ImportRepos = {}
+  /** Arguments passed to the `menubar-status` command */
+  export type MenubarStatus = {}
+}
+
