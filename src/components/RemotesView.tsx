@@ -227,7 +227,7 @@ export function RemotesView({ repo, onChanged }: { repo: Repo; onChanged: () => 
                   <Action
                     title={`Switch to ${otherProtocol.toUpperCase()}`}
                     icon={Icon.Switch}
-                    shortcut={Keyboard.Shortcut.Common.Duplicate}
+                    shortcut={{ modifiers: ["cmd", "opt"], key: "p" }}
                     onAction={() => switchProtocol(remote, otherProtocol)}
                   />
                   {expectedUrl && !matchesExpected && (

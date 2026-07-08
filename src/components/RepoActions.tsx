@@ -251,7 +251,7 @@ function RemoteActions({ entry, ctl }: ActionContext) {
         <Action
           title={`Switch Origin to ${otherProtocol.toUpperCase()}`}
           icon={Icon.Switch}
-          shortcut={Keyboard.Shortcut.Common.Duplicate}
+          shortcut={{ modifiers: ["cmd", "opt"], key: "p" }}
           onAction={() => switchProtocol(otherProtocol)}
         />
       )}
@@ -318,7 +318,7 @@ function StorageActions({ entry, ctl }: ActionContext) {
         <Action
           title="Offload Local Copy"
           icon={Icon.Cloud}
-          shortcut={Keyboard.Shortcut.Common.Duplicate}
+          shortcut={{ modifiers: ["ctrl", "opt"], key: "o" }}
           onAction={offload}
         />
       )}
