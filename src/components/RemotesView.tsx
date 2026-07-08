@@ -43,8 +43,8 @@ function RemoteForm({ repoPath, existing, onDone }: RemoteFormProps) {
   const submit = async () => {
     const trimmedName = name.trim();
     const trimmedUrl = url.trim();
-    if (!/^[\w.-]+$/.test(trimmedName)) {
-      setNameError("Letters, digits, dots, dashes, and underscores only.");
+    if (!/^[A-Za-z0-9][\w.-]*$/.test(trimmedName)) {
+      setNameError("Must start with a letter or digit; letters, digits, dots, dashes, and underscores only.");
       return;
     }
     if (!parseRemoteUrl(trimmedUrl)) {

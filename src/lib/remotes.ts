@@ -11,10 +11,13 @@ export interface ParsedRemote {
   protocol: string;
 }
 
-/** Parse any git remote URL (scp-like, ssh://, https://, git://). Returns undefined when unparseable. */
+/**
+ * Parse any git remote URL (scp-like, ssh://, https://, git://). Returns undefined when unparseable.
+ * Leading-dash inputs are rejected so values that pass this check can never be read as git flags.
+ */
 export function parseRemoteUrl(url: string): ParsedRemote | undefined {
   const trimmed = url.trim();
-  if (!trimmed) return undefined;
+  if (!trimmed || trimmed.startsWith("-")) return undefined;
   try {
     const parsed = gitUrlParse(trimmed);
     if (!parsed.resource || !parsed.full_name) return undefined;

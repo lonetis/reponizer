@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { git } from "./git";
 import { parseRemoteLines } from "./inspect";
+import { parseRemoteUrl } from "./remotes";
 import { OFFLOAD_FILE } from "./scan";
 import { parseStatus } from "./status";
 import type { OffloadedRepo, RemoteInfo, Repo } from "./types";
@@ -31,10 +32,24 @@ export class OffloadBlockedError extends Error {
 export async function readOffloadFile(dir: string): Promise<OffloadFileData> {
   const raw = await fs.readFile(path.join(dir, OFFLOAD_FILE), "utf8");
   const data = JSON.parse(raw) as OffloadFileData;
+  // The placeholder may have been written elsewhere (import, another machine), so treat its
+  // contents as untrusted: anything passed to git argv must parse as a URL and must not
+  // start with "-" (argument injection, e.g. --upload-pack=…).
   if (data.schema !== "reponizer/offloaded" || typeof data.origin !== "string" || !data.origin) {
     throw new Error("missing or invalid origin");
   }
+  if (data.origin.startsWith("-") || !parseRemoteUrl(data.origin)) {
+    throw new Error(`origin is not a valid git URL: ${data.origin}`);
+  }
   if (!Array.isArray(data.remotes)) data.remotes = [];
+  data.remotes = data.remotes.filter(
+    (remote) =>
+      typeof remote?.name === "string" &&
+      /^[A-Za-z0-9][\w.-]*$/.test(remote.name) &&
+      typeof remote?.fetchUrl === "string" &&
+      !remote.fetchUrl.startsWith("-") &&
+      parseRemoteUrl(remote.fetchUrl) !== undefined,
+  );
   return data;
 }
 
@@ -146,7 +161,7 @@ export async function restoreOffloaded(entry: OffloadedRepo): Promise<void> {
   await fs.rm(path.join(entry.fullPath, OFFLOAD_FILE));
   await fs.rm(path.join(entry.fullPath, ".DS_Store"), { force: true });
   try {
-    await git(path.dirname(entry.fullPath), ["clone", data.origin, entry.fullPath], { timeoutMs: 15 * 60_000 });
+    await git(path.dirname(entry.fullPath), ["clone", "--", data.origin, entry.fullPath], { timeoutMs: 15 * 60_000 });
   } catch (error) {
     // Put the placeholder back so the entry is not lost on a failed clone (e.g. offline).
     await fs.mkdir(entry.fullPath, { recursive: true });

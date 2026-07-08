@@ -112,7 +112,7 @@ export async function cloneRepo(plan: ClonePlan): Promise<void> {
     }
   }
   await fs.mkdir(path.dirname(plan.destination), { recursive: true });
-  await git(path.dirname(plan.destination), ["clone", plan.url, plan.destination], { timeoutMs: 15 * 60_000 });
+  await git(path.dirname(plan.destination), ["clone", "--", plan.url, plan.destination], { timeoutMs: 15 * 60_000 });
 }
 
 /** Remove now-empty parent directories between `from` (exclusive) and `root` (exclusive). */
