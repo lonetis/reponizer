@@ -255,7 +255,12 @@ function RemoteActions({ entry, ctl }: ActionContext) {
         />
       )}
       {check.state === "mismatch" && repo.origin && (
-        <Action title="Relocate Folder to Match Origin" icon={Icon.ArrowRight} onAction={relocate} />
+        <Action
+          title="Relocate Folder to Match Origin"
+          icon={Icon.ArrowRight}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "m" }}
+          onAction={relocate}
+        />
       )}
       {repo.origin && (
         <Action
