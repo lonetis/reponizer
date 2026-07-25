@@ -48,10 +48,11 @@ export async function pullRepo(repo: Repo): Promise<OpResult> {
 export async function runOnRepos(
   repos: Repo[],
   op: (repo: Repo) => Promise<OpResult>,
+  concurrency: number,
   onProgress?: (done: number, total: number) => void,
 ): Promise<OpResult[]> {
   let done = 0;
-  return mapConcurrent(repos, 4, async (repo) => {
+  return mapConcurrent(repos, concurrency, async (repo) => {
     const result = await op(repo);
     onProgress?.(++done, repos.length);
     return result;

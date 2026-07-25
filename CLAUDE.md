@@ -29,7 +29,7 @@ src/
     useRepoIndex.ts     Cache-first index hook: instant render, background rescan
   lib/
     types.ts            All shared types (Repo, OffloadedRepo, RepoIndex, RemoteCheck, …)
-    config.ts           Preferences → Config (root, depth, protocol, apps) + host alias/host-only rules
+    config.ts           Preferences → Config (root, depth, protocol, network concurrency, apps) + host alias/host-only rules
     git.ts              execFile wrapper: PATH fix, GIT_TERMINAL_PROMPT=0, ssh BatchMode,
                         1Password SSH agent fallback, timeouts, GitError with stderr
     scan.ts             Directory walk: finds .git dirs and offload placeholders

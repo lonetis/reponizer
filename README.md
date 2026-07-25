@@ -47,6 +47,7 @@ Open any Reponizer command, press `⌘ ,`, and adjust the preferences:
 - **Repositories Root** — the folder containing all repos (default `~/repos`)
 - **Default Protocol** — SSH (default) or HTTPS; used for suggested origin URLs and bare-path clones
 - **Max Scan Depth** — how deep to search below the root (increase for GitLab subgroups)
+- **Network Concurrency** — how many repos Fetch All / Pull All sync at once (default 4); raise it to finish faster, lower it if your SSH agent (e.g. 1Password) struggles with parallel connections
 - **Host Aliases** — comma-separated `alias=host` pairs mapping a folder name to the real remote host, e.g. `buw=git.uni-wuppertal.de, overleaf.com=git.overleaf.com`
 - **Host-Only Comparison** — comma-separated hosts (alias or real host) whose repos are audited by host only, so the folder layout below them is up to you
 - **Editor / Terminal** — the apps used by the open actions; besides Terminal.app and iTerm2, terminals like kitty, Alacritty, WezTerm, Ghostty, and Warp open directly in the repository folder

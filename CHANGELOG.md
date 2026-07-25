@@ -1,5 +1,9 @@
 # Reponizer Changelog
 
+## [Network Concurrency] - 2026-07-23
+
+- New **Network Concurrency** preference: choose how many repositories Fetch All / Pull All sync in parallel (default 4) — applies to the no-view commands and the Fetch All / Pull All actions in the repository list
+
 ## [Terminal Support] - 2026-07-22
 
 - **Open in Terminal** now works with terminals that ignore a plain "open folder" event: kitty, Alacritty, WezTerm, Ghostty, and Warp are launched with the repository as working directory (Terminal.app and iTerm2 behave as before), and failures surface as a toast instead of silently doing nothing

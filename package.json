@@ -109,6 +109,23 @@
       ]
     },
     {
+      "name": "networkConcurrency",
+      "type": "dropdown",
+      "required": false,
+      "default": "4",
+      "title": "Network Concurrency",
+      "description": "How many repositories Fetch All / Pull All sync at the same time. Higher values finish faster but put more load on the SSH agent (e.g. 1Password) and the network.",
+      "data": [
+        { "title": "1 (sequential)", "value": "1" },
+        { "title": "2", "value": "2" },
+        { "title": "4", "value": "4" },
+        { "title": "6", "value": "6" },
+        { "title": "8", "value": "8" },
+        { "title": "12", "value": "12" },
+        { "title": "16", "value": "16" }
+      ]
+    },
+    {
       "name": "hostAliases",
       "type": "textfield",
       "required": false,

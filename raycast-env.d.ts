@@ -14,6 +14,8 @@ type ExtensionPreferences = {
   "defaultProtocol": "ssh" | "https",
   /** Max Scan Depth - How many folder levels below the root to search for repositories. 3 covers host/owner/repo; increase for GitLab subgroups. */
   "scanDepth": "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10",
+  /** Network Concurrency - How many repositories Fetch All / Pull All sync at the same time. Higher values finish faster but put more load on the SSH agent (e.g. 1Password) and the network. */
+  "networkConcurrency": "1" | "2" | "4" | "6" | "8" | "12" | "16",
   /** Host Aliases - Comma-separated alias=host pairs mapping a folder name under the root to the real remote host, e.g. “buw=git.uni-wuppertal.de, overleaf.com=git.overleaf.com”. Aliases may be any folder name. */
   "hostAliases"?: string,
   /** Host-Only Comparison - Comma-separated hosts (alias or real host) whose repos are audited by host only — the folder path below the host may differ from the remote path (e.g. Overleaf’s opaque project IDs). */

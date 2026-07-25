@@ -154,7 +154,7 @@ function SyncActions({ entry, ctl }: ActionContext) {
   const bulk = (verb: string, op: (repo: Repo) => Promise<OpResult>) => () =>
     withToast(`${verb} all repositories…`, async (toast) => {
       const repos = (ctl.index?.entries ?? []).filter((e): e is Repo => e.kind === "repo" && !e.error);
-      const results = await runOnRepos(repos, op, (done, total) => {
+      const results = await runOnRepos(repos, op, getConfig().networkConcurrency, (done, total) => {
         toast.message = `${done}/${total}`;
       });
       await ctl.refreshEntries(repos.map((r) => r.fullPath));
