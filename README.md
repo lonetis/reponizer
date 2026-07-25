@@ -49,7 +49,7 @@ Open any Reponizer command, press `⌘ ,`, and adjust the preferences:
 - **Max Scan Depth** — how deep to search below the root (increase for GitLab subgroups)
 - **Host Aliases** — comma-separated `alias=host` pairs mapping a folder name to the real remote host, e.g. `buw=git.uni-wuppertal.de, overleaf.com=git.overleaf.com`
 - **Host-Only Comparison** — comma-separated hosts (alias or real host) whose repos are audited by host only, so the folder layout below them is up to you
-- **Editor / Terminal** — the apps used by the open actions
+- **Editor / Terminal** — the apps used by the open actions; besides Terminal.app and iTerm2, terminals like kitty, Alacritty, WezTerm, Ghostty, and Warp open directly in the repository folder
 
 ### Commands
 

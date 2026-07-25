@@ -20,7 +20,7 @@ type ExtensionPreferences = {
   "hostOnlyHosts"?: string,
   /** Editor - Application used by the “Open in Editor” action. */
   "editorApp"?: import("@raycast/api").Application,
-  /** Terminal - Application used by the “Open in Terminal” action. */
+  /** Terminal - Application used by the “Open in Terminal” action. Terminal.app, iTerm2, kitty, Alacritty, WezTerm, Ghostty, and Warp all open in the repository folder. */
   "terminalApp"?: import("@raycast/api").Application
 }
 

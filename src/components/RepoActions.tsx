@@ -7,6 +7,7 @@ import {
   Keyboard,
   LaunchType,
   Toast,
+  closeMainWindow,
   confirmAlert,
   launchCommand,
   openExtensionPreferences,
@@ -28,6 +29,7 @@ import {
   summarizeResults,
 } from "../lib/ops";
 import { convertProtocol, expectedOriginFor, protocolOf, relativePathForUrl, webUrlFor } from "../lib/remotes";
+import { openInTerminal } from "../lib/terminal";
 import type { OffloadedRepo, Protocol, Repo, RepoEntry } from "../lib/types";
 import { errorMessage, formatBytes } from "../lib/util";
 import { RemotesView } from "./RemotesView";
@@ -78,12 +80,22 @@ function OpenActions({ entry }: { entry: RepoEntry }) {
       )}
       <Action.ShowInFinder path={entry.fullPath} />
       {entry.kind === "repo" && (
-        <Action.Open
+        <Action
           title="Open in Terminal"
           icon={Icon.Terminal}
-          target={entry.fullPath}
-          application={config.terminalApp}
           shortcut={{ modifiers: ["cmd"], key: "t" }}
+          onAction={async () => {
+            try {
+              await openInTerminal(config.terminalApp, entry.fullPath);
+              await closeMainWindow();
+            } catch (error) {
+              await showToast({
+                style: Toast.Style.Failure,
+                title: "Could Not Open Terminal",
+                message: errorMessage(error),
+              });
+            }
+          }}
         />
       )}
       {webUrl && (
