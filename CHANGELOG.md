@@ -1,5 +1,10 @@
 # Reponizer Changelog
 
+## [Host Aliases] - 2026-07-22
+
+- New **Host Aliases** preference: map folder names under the root to real remote hosts (`buw=git.uni-wuppertal.de`), so short or legacy folder names pass the remote audit; clone destinations, bare-path clone inputs, relocation targets, and duplicate detection all honor the mapping
+- New **Host-Only Comparison** preference: hosts whose repos are audited by host identity only, for services with opaque repo paths such as Overleaf project IDs
+
 ## [Initial Version] - 2026-07-08
 
 - Search Repositories: hierarchical overview (host / owner sections), search, filters, detail panel

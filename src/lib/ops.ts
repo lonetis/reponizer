@@ -4,7 +4,7 @@ import { git } from "./git";
 import { OFFLOAD_FILE } from "./scan";
 import { isClean } from "./status";
 import type { Protocol, Repo } from "./types";
-import { buildRemoteUrl, coerceCloneUrl, parseRemoteUrl } from "./remotes";
+import { buildRemoteUrl, coerceCloneUrl, parseRemoteUrl, relativePathForUrl } from "./remotes";
 import { errorMessage, mapConcurrent } from "./util";
 
 export interface OpResult {
@@ -91,7 +91,8 @@ export function planClone(
   const parsed = parseRemoteUrl(url);
   if (!parsed) return undefined;
   const finalUrl = protocolOverride ? buildRemoteUrl(parsed.host, parsed.path, protocolOverride) : url;
-  const relativePath = `${parsed.host.toLowerCase()}/${parsed.path}`;
+  const relativePath = relativePathForUrl(url);
+  if (!relativePath) return undefined;
   return { url: finalUrl, destination: path.join(root, relativePath), relativePath };
 }
 

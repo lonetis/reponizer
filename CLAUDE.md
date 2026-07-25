@@ -29,7 +29,7 @@ src/
     useRepoIndex.ts     Cache-first index hook: instant render, background rescan
   lib/
     types.ts            All shared types (Repo, OffloadedRepo, RepoIndex, RemoteCheck, …)
-    config.ts           Preferences → Config (root, depth, protocol, apps)
+    config.ts           Preferences → Config (root, depth, protocol, apps) + host alias/host-only rules
     git.ts              execFile wrapper: PATH fix, GIT_TERMINAL_PROMPT=0, ssh BatchMode,
                         1Password SSH agent fallback, timeouts, GitError with stderr
     scan.ts             Directory walk: finds .git dirs and offload placeholders
@@ -57,7 +57,7 @@ src/
 
 - **Cache writes are serialized and merged against the freshest cached index** (`cache.patchFreshIndex`): every mutation (reconcile / refreshEntries / rebuild) patches what is currently in the cache, not the caller's snapshot — otherwise a slow bulk operation and a per-repo action would clobber each other. Route any new index mutation through it.
 - **Untrusted strings never reach git argv unchecked**: `parseRemoteUrl` rejects leading-dash inputs, `readOffloadFile` validates origin/remotes from placeholder files, clone URLs are passed behind `--`, and remote names must match `^[A-Za-z0-9][\w.-]*$`. Keep these guards when adding git calls.
-- **Remote comparison is protocol-agnostic**: `normalizeRemoteUrl` lowercases host + path and strips `.git`; only host+path identity matters. Expected origin for `host/owner/repo` is derived in `remotes.expectedOriginFor` (returns `undefined` for paths whose first segment has no dot → `unstructured`).
+- **Remote comparison is protocol-agnostic and alias-aware**: `normalizeRemoteUrl` maps the host into canonical alias space (`config.getHostRules`, preference `hostAliases`, `alias=realhost` pairs), lowercases, and strips `.git`; only canonical host+path identity matters. Expected origin for `host/owner/repo` is derived in `remotes.expectedOriginFor`; the first segment may be a dotted hostname or a configured alias (anything else → `unstructured`). Hosts listed in the `hostOnlyHosts` preference (alias or real form) are compared by host identity only — `expectedOriginFor` returns `undefined` for them (no Fix Origin offered) and `checkRemotes` reports `ok`/`mismatch` from the origin host alone (Overleaf-style opaque repo paths).
 - **`RemoteCheck.state`** drives all "deviation" UI: `ok | mismatch | no-origin | no-remotes | unstructured | unknown`. Fixes offered: set origin to expected (preserving the current origin's protocol), or relocate the folder to match origin.
 - **Offload safety**: `offload.findUnsyncedState` fetches origin first, then blocks on uncommitted/untracked changes, stashes, and any branch that is ahead, upstream-less, or tracking a gone upstream. The working copy is renamed aside, the placeholder (`reponizer-offloaded.json`, schema `reponizer/offloaded`, includes origin + all remotes + branch + size) is written, then the copy is trashed; failures roll back. Restore refuses non-empty folders and re-creates the placeholder if the clone fails.
 - **Pull is always `--ff-only`** and skips dirty/detached/conflicted/upstream-less repos (`ops.pullRepo`). Never introduce merging pulls.

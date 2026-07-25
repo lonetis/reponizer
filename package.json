@@ -109,6 +109,20 @@
       ]
     },
     {
+      "name": "hostAliases",
+      "type": "textfield",
+      "required": false,
+      "title": "Host Aliases",
+      "description": "Comma-separated alias=host pairs mapping a folder name under the root to the real remote host, e.g. “buw=git.uni-wuppertal.de, overleaf.com=git.overleaf.com”. Aliases may be any folder name."
+    },
+    {
+      "name": "hostOnlyHosts",
+      "type": "textfield",
+      "required": false,
+      "title": "Host-Only Comparison",
+      "description": "Comma-separated hosts (alias or real host) whose repos are audited by host only — the folder path below the host may differ from the remote path (e.g. Overleaf’s opaque project IDs)."
+    },
+    {
       "name": "editorApp",
       "type": "appPicker",
       "required": false,

@@ -1,5 +1,16 @@
 import gitUrlParse from "git-url-parse";
+import { getHostRules } from "./config";
 import type { Protocol, RemoteCheck, RemoteInfo } from "./types";
+
+/**
+ * Canonical folder-space form of a remote host: lowercased, with the configured
+ * host alias applied (e.g. "git.uni-wuppertal.de" → "buw"). All identity
+ * comparisons and root-relative paths use this space.
+ */
+function canonicalHost(host: string): string {
+  const lower = host.toLowerCase();
+  return getHostRules().realToAlias.get(lower) ?? lower;
+}
 
 export interface ParsedRemote {
   /** Hostname without port, e.g. "github.com". */
@@ -33,13 +44,13 @@ export function parseRemoteUrl(url: string): ParsedRemote | undefined {
 }
 
 /**
- * Protocol-independent identity of a remote: lowercased host + path without ".git".
+ * Protocol-independent identity of a remote: canonical (alias-space) host + lowercased path without ".git".
  * Two remotes with equal normalized forms point to the same repository.
  */
 export function normalizeRemoteUrl(url: string): string | undefined {
   const parsed = parseRemoteUrl(url);
   if (!parsed) return undefined;
-  return `${parsed.host.toLowerCase()}/${parsed.path.toLowerCase()}`;
+  return `${canonicalHost(parsed.host)}/${parsed.path.toLowerCase()}`;
 }
 
 export function remotesMatch(a: string, b: string): boolean {
@@ -71,28 +82,64 @@ export function webUrlFor(url: string): string | undefined {
   return `https://${parsed.host}/${parsed.path}`;
 }
 
-/** Relative install path (host/owner/repo) a remote URL maps to inside the repos root. */
+/** Relative install path (host/owner/repo, alias-space host) a remote URL maps to inside the repos root. */
 export function relativePathForUrl(url: string): string | undefined {
   const parsed = parseRemoteUrl(url);
   if (!parsed) return undefined;
-  return `${parsed.host.toLowerCase()}/${parsed.path}`;
+  return `${canonicalHost(parsed.host)}/${parsed.path}`;
+}
+
+/**
+ * Real remote host implied by the first path segment under the root:
+ * resolves a configured alias, otherwise accepts any dotted hostname.
+ */
+function hostForFolder(folderHost: string): string | undefined {
+  const lower = folderHost.toLowerCase();
+  const real = getHostRules().aliasToReal.get(lower);
+  if (real) return real;
+  return lower.includes(".") ? lower : undefined;
 }
 
 /**
  * Expected origin URL derived from a repo's location under the root.
- * Returns undefined when the path does not follow the host/owner/repo layout.
+ * Returns undefined when the path does not follow the host/owner/repo layout
+ * (unknown host) or when the host is configured for host-only comparison.
  */
 export function expectedOriginFor(relativePath: string, protocol: Protocol): string | undefined {
   const segments = relativePath.split("/").filter(Boolean);
   if (segments.length < 2) return undefined;
-  const host = segments[0];
-  if (!host.includes(".")) return undefined;
+  const host = hostForFolder(segments[0]);
+  if (!host) return undefined;
+  if (getHostRules().hostOnly.has(canonicalHost(host))) return undefined;
   return buildRemoteUrl(host, segments.slice(1).join("/"), protocol);
 }
 
 export function checkRemotes(relativePath: string, remotes: RemoteInfo[], protocol: Protocol): RemoteCheck {
-  const expectedUrl = expectedOriginFor(relativePath, protocol);
   const origin = remotes.find((r) => r.name === "origin");
+  const segments = relativePath.split("/").filter(Boolean);
+  const realHost = segments.length >= 2 ? hostForFolder(segments[0]) : undefined;
+
+  // Host-only hosts (e.g. Overleaf's opaque project IDs): only the origin's host must match the location.
+  if (realHost && getHostRules().hostOnly.has(canonicalHost(realHost))) {
+    if (remotes.length === 0) {
+      return { state: "no-remotes", message: "No remotes configured." };
+    }
+    if (!origin) {
+      const names = remotes.map((r) => r.name).join(", ");
+      return { state: "no-origin", message: `No “origin” remote (has: ${names}).` };
+    }
+    const parsedOrigin = parseRemoteUrl(origin.fetchUrl);
+    if (parsedOrigin && canonicalHost(parsedOrigin.host) === canonicalHost(realHost)) {
+      return { state: "ok", actualUrl: origin.fetchUrl, message: "origin host matches the repo location (host-only)." };
+    }
+    return {
+      state: "mismatch",
+      actualUrl: origin.fetchUrl,
+      message: `origin points to ${origin.fetchUrl}, but the location implies host ${realHost} (host-only).`,
+    };
+  }
+
+  const expectedUrl = expectedOriginFor(relativePath, protocol);
 
   if (!expectedUrl) {
     return {
@@ -121,7 +168,8 @@ export function checkRemotes(relativePath: string, remotes: RemoteInfo[], protoc
 
 /**
  * Turn user input into a cloneable URL. Full URLs keep their protocol;
- * bare paths like "github.com/owner/repo" get the default protocol.
+ * bare paths like "github.com/owner/repo" (or with a configured host alias,
+ * "buw/group/repo") get the default protocol.
  */
 export function coerceCloneUrl(input: string, defaultProtocol: Protocol): string | undefined {
   const trimmed = input.trim().replace(/\/+$/, "");
@@ -130,7 +178,9 @@ export function coerceCloneUrl(input: string, defaultProtocol: Protocol): string
   if (hasScheme) {
     return parseRemoteUrl(trimmed) ? trimmed : undefined;
   }
-  const bare = /^([\w.-]+\.[a-z]{2,})\/(.+)$/i.exec(trimmed);
+  const bare = /^([\w.-]+)\/(.+)$/.exec(trimmed);
   if (!bare) return undefined;
-  return buildRemoteUrl(bare[1], bare[2].replace(/\.git$/, ""), defaultProtocol);
+  const host = hostForFolder(bare[1]);
+  if (!host || !/\.[a-z]{2,}$/i.test(host)) return undefined;
+  return buildRemoteUrl(host, bare[2].replace(/\.git$/, ""), defaultProtocol);
 }
