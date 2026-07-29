@@ -8,6 +8,8 @@ A Raycast extension that keeps a large, structured git repository folder organiz
 - **Repo status at a glance** — branch, ahead/behind counts, uncommitted changes, merge conflicts, stashes, and size on disk
 - **Remote auditing** — flags repos whose `origin` does not match their location (and repos without any remote), with one-key auto-fix, folder relocation, and duplicate detection
 - **Remote management** — add, edit, rename, and delete remotes; switch any remote between SSH and HTTPS
+- **Host aliases** — keep short folder names like `buw` for long hosts like `git.uni-wuppertal.de`; auditing, cloning, and relocation all understand the mapping
+- **Host-only comparison** — for hosts with opaque repo paths (e.g. Overleaf project IDs), only the host is audited so you can name the folders yourself
 - **Clone into structure** — paste any git URL (or a bare `github.com/owner/repo` path) and it lands in the right folder, keeping the protocol you pasted
 - **Fetch / Pull everything** — bulk fetch and safe fast-forward pulls with progress and a failure report
 - **Offload local copies** — verify a repo is fully pushed, then free its disk space while keeping a placeholder; re-download it anytime
@@ -45,7 +47,10 @@ Open any Reponizer command, press `⌘ ,`, and adjust the preferences:
 - **Repositories Root** — the folder containing all repos (default `~/repos`)
 - **Default Protocol** — SSH (default) or HTTPS; used for suggested origin URLs and bare-path clones
 - **Max Scan Depth** — how deep to search below the root (increase for GitLab subgroups)
-- **Editor / Terminal** — the apps used by the open actions
+- **Network Concurrency** — how many repos Fetch All / Pull All sync at once (default 4); raise it to finish faster, lower it if your SSH agent (e.g. 1Password) struggles with parallel connections
+- **Host Aliases** — comma-separated `alias=host` pairs mapping a folder name to the real remote host, e.g. `buw=git.uni-wuppertal.de, overleaf.com=git.overleaf.com`
+- **Host-Only Comparison** — comma-separated hosts (alias or real host) whose repos are audited by host only, so the folder layout below them is up to you
+- **Editor / Terminal** — the apps used by the open actions; besides Terminal.app and iTerm2, terminals like kitty, Alacritty, WezTerm, Ghostty, and Warp open directly in the repository folder
 
 ### Commands
 

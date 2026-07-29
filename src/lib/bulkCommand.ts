@@ -16,7 +16,7 @@ export async function runBulkCommand(verb: string, op: (repo: Repo) => Promise<O
       index = await rebuildIndex(config.root, config.maxDepth, config.defaultProtocol);
     }
     const repos = index.entries.filter((e): e is Repo => e.kind === "repo" && !e.error);
-    const results = await runOnRepos(repos, op, (done, total) => {
+    const results = await runOnRepos(repos, op, config.networkConcurrency, (done, total) => {
       toast.message = `${done}/${total}`;
     });
     toast.message = "Refreshing status…";

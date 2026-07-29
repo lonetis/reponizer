@@ -109,6 +109,37 @@
       ]
     },
     {
+      "name": "networkConcurrency",
+      "type": "dropdown",
+      "required": false,
+      "default": "4",
+      "title": "Network Concurrency",
+      "description": "How many repositories Fetch All / Pull All sync at the same time. Higher values finish faster but put more load on the SSH agent (e.g. 1Password) and the network.",
+      "data": [
+        { "title": "1 (sequential)", "value": "1" },
+        { "title": "2", "value": "2" },
+        { "title": "4", "value": "4" },
+        { "title": "6", "value": "6" },
+        { "title": "8", "value": "8" },
+        { "title": "12", "value": "12" },
+        { "title": "16", "value": "16" }
+      ]
+    },
+    {
+      "name": "hostAliases",
+      "type": "textfield",
+      "required": false,
+      "title": "Host Aliases",
+      "description": "Comma-separated alias=host pairs mapping a folder name under the root to the real remote host, e.g. “buw=git.uni-wuppertal.de, overleaf.com=git.overleaf.com”. Aliases may be any folder name."
+    },
+    {
+      "name": "hostOnlyHosts",
+      "type": "textfield",
+      "required": false,
+      "title": "Host-Only Comparison",
+      "description": "Comma-separated hosts (alias or real host) whose repos are audited by host only — the folder path below the host may differ from the remote path (e.g. Overleaf’s opaque project IDs)."
+    },
+    {
       "name": "editorApp",
       "type": "appPicker",
       "required": false,
@@ -122,7 +153,7 @@
       "required": false,
       "default": "com.apple.Terminal",
       "title": "Terminal",
-      "description": "Application used by the “Open in Terminal” action."
+      "description": "Application used by the “Open in Terminal” action. Terminal.app, iTerm2, kitty, Alacritty, WezTerm, Ghostty, and Warp all open in the repository folder."
     }
   ],
   "dependencies": {
@@ -141,6 +172,7 @@
   },
   "scripts": {
     "build": "ray build -e dist",
+    "deploy": "bash scripts/deploy.sh",
     "dev": "ray develop",
     "lint": "ray lint",
     "fix-lint": "ray lint --fix",
