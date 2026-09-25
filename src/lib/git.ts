@@ -20,7 +20,10 @@ let cachedEnv: NodeJS.ProcessEnv | undefined;
 function gitEnv(): NodeJS.ProcessEnv {
   if (cachedEnv) return cachedEnv;
   const env: NodeJS.ProcessEnv = { ...process.env };
-  env.PATH = ["/usr/bin", "/usr/local/bin", "/opt/homebrew/bin", env.PATH].filter(Boolean).join(":");
+  // /bin matters too: git-lfs runs its helpers through `sh` looked up via PATH (and reports a
+  // missing sh as a missing "git-lfs"), while macOS only ships /bin/sh.
+  const dirs = ["/usr/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/bin", "/opt/homebrew/bin"];
+  env.PATH = [...new Set([...dirs, ...(env.PATH ?? "").split(":")].filter(Boolean))].join(":");
   env.GIT_TERMINAL_PROMPT = "0";
   env.GIT_SSH_COMMAND = env.GIT_SSH_COMMAND ?? "ssh -oBatchMode=yes";
   if (!env.SSH_AUTH_SOCK && fs.existsSync(ONE_PASSWORD_AGENT_SOCK)) {
@@ -58,9 +61,22 @@ export async function git(cwd: string, args: string[], options: GitOptions = {})
   } catch (error) {
     const err = error as NodeJS.ErrnoException & { stderr?: string; killed?: boolean };
     const stderr = (err.stderr ?? "").trim();
-    const reason = err.killed ? "timed out" : stderr.split("\n")[0] || err.message;
+    const reason = err.killed ? "timed out" : stderrReason(stderr) || err.message;
     throw new GitError(`git ${args[0]}: ${reason}`, args, stderr);
   }
+}
+
+/**
+ * The line of stderr that explains a failure. Commands like clone print progress ("Cloning
+ * into …") to stderr before the actual error, so the first line is often just noise: prefer
+ * the last `fatal:`/`error:` line, else the last non-empty one.
+ */
+function stderrReason(stderr: string): string | undefined {
+  const lines = stderr
+    .split(/[\r\n]+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return lines.findLast((line) => /^(fatal|error):/i.test(line)) ?? lines.at(-1);
 }
 
 /** Run an arbitrary command with the same environment fixes as git. */
