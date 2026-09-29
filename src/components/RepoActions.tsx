@@ -24,6 +24,8 @@ import {
   OpResult,
   failureReport,
   fetchRepo,
+  hasUnpublishedBranch,
+  publishBranch,
   pullRepo,
   pruneEmptyParents,
   relocateRepo,
@@ -182,6 +184,21 @@ function SyncActions({ entry, ctl }: ActionContext) {
       return result.skipped ? `Skipped: ${result.skipped}` : "Pulled (fast-forward)";
     });
 
+  const branch = repo.status?.branch ?? "HEAD";
+  const publish = async () => {
+    const confirmed = await confirmAlert({
+      title: "Publish Branch to Origin",
+      message: describeTransition(branch, repo.origin?.fetchUrl ?? "—"),
+      primaryAction: { title: "Publish" },
+    });
+    if (!confirmed) return;
+    await withToast(`Publishing ${branch}…`, async () => {
+      await publishBranch(repo.fullPath);
+      await ctl.reconcile(repo.fullPath);
+      return `Tracking origin/${branch}`;
+    });
+  };
+
   return (
     <ActionPanel.Section title="Sync">
       <Action title="Fetch" icon={Icon.ArrowDown} shortcut={{ modifiers: ["opt"], key: "f" }} onAction={fetchOne} />
@@ -191,6 +208,7 @@ function SyncActions({ entry, ctl }: ActionContext) {
         shortcut={{ modifiers: ["opt"], key: "p" }}
         onAction={pullOne}
       />
+      {hasUnpublishedBranch(repo) && <Action title="Publish Branch" icon={Icon.Upload} onAction={publish} />}
       <Action
         title="Fetch All"
         icon={Icon.ArrowDown}
