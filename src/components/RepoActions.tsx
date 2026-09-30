@@ -14,10 +14,12 @@ import {
   openExtensionPreferences,
   showToast,
   trash,
+  useNavigation,
 } from "@raycast/api";
 import type { RepoIndexController } from "../hooks/useRepoIndex";
 import { getConfig } from "../lib/config";
-import { ForkPushError, createRepoUrl, pushToOrigin, syncForkRepo, upstreamCandidates } from "../lib/fork";
+import { hostOf } from "../lib/filters";
+import { pushToOrigin, syncForkRepo, upstreamCandidates } from "../lib/fork";
 import { git } from "../lib/git";
 import { OffloadBlockedError, offloadRepo, restoreOffloaded } from "../lib/offload";
 import {
@@ -32,10 +34,18 @@ import {
   runOnRepos,
   summarizeResults,
 } from "../lib/ops";
-import { convertProtocol, expectedOriginFor, protocolOf, relativePathForUrl, webUrlFor } from "../lib/remotes";
+import {
+  convertProtocol,
+  expectedOriginFor,
+  hostWebUrl,
+  protocolOf,
+  relativePathForUrl,
+  webUrlFor,
+} from "../lib/remotes";
 import { openInTerminal } from "../lib/terminal";
 import type { OffloadedRepo, Protocol, Repo, RepoEntry } from "../lib/types";
 import { describeTransition, errorDetails, errorMessage, formatBytes } from "../lib/util";
+import { CreateRepoForm } from "./CreateRepoForm";
 import { ForkView } from "./ForkView";
 import { RemoteForm, RemotesView } from "./RemotesView";
 
@@ -250,14 +260,12 @@ function ForkActions({ entry, ctl }: ActionContext) {
       try {
         await pushToOrigin(repo);
       } catch (error) {
-        if (error instanceof ForkPushError) {
-          const createUrl = createRepoUrl(error.targetUrl);
-          throw new OperationFailure(
-            error.message,
-            createUrl ? { title: "Create the Repository", onAction: () => open(createUrl) } : undefined,
-          );
-        }
-        throw error;
+        // Most likely the repository does not exist on the host yet.
+        const hostUrl = repo.origin && hostWebUrl(repo.origin.fetchUrl);
+        throw new OperationFailure(
+          errorMessage(error),
+          hostUrl ? { title: "Open Host in Browser", onAction: () => open(hostUrl) } : undefined,
+        );
       }
       await ctl.reconcile(repo.fullPath);
       return "Pushed";
@@ -488,9 +496,26 @@ function StorageActions({ entry, ctl }: ActionContext) {
   );
 }
 
-function IndexActions({ ctl }: ActionContext) {
+function IndexActions({ entry, ctl }: ActionContext) {
+  const { pop } = useNavigation();
   return (
     <ActionPanel.Section title="Index">
+      <Action.Push
+        title="Create Repository"
+        icon={Icon.Plus}
+        shortcut={Keyboard.Shortcut.Common.New}
+        target={
+          <CreateRepoForm
+            entries={ctl.index?.entries ?? []}
+            sourceHost={hostOf(entry)}
+            navigationTitle="Create Repository"
+            onCreated={async (fullPath) => {
+              await ctl.reconcile(fullPath);
+              pop();
+            }}
+          />
+        }
+      />
       <Action
         title="Refresh"
         icon={Icon.ArrowClockwise}

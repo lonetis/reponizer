@@ -82,6 +82,15 @@ export function webUrlFor(url: string): string | undefined {
   return `https://${parsed.host}/${parsed.path}`;
 }
 
+/**
+ * Website of the host a remote lives on, where the user creates a repository by hand. Deliberately
+ * only the host: every platform keeps its "new repository" page somewhere else.
+ */
+export function hostWebUrl(url: string): string | undefined {
+  const parsed = parseRemoteUrl(url);
+  return parsed && `https://${parsed.host}`;
+}
+
 /** Relative install path (host/owner/repo, alias-space host) a remote URL maps to inside the repos root. */
 export function relativePathForUrl(url: string): string | undefined {
   const parsed = parseRemoteUrl(url);

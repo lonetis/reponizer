@@ -107,24 +107,36 @@ export function planClone(
   return { url: finalUrl, destination: path.join(root, relativePath), relativePath };
 }
 
-export async function cloneRepo(plan: ClonePlan): Promise<void> {
-  let existing: string[] | undefined;
+/**
+ * Make sure a new repository can go to `destination`: it must be missing or empty apart from a
+ * stray .DS_Store, which is removed (git refuses to clone into a non-empty directory).
+ * Returns whether the folder is missing, so a rollback knows whether to remove it again.
+ */
+export async function prepareDestination(destination: string, relativePath: string): Promise<boolean> {
+  let existing: string[];
   try {
-    existing = await fs.readdir(plan.destination);
-  } catch {
-    existing = undefined; // destination does not exist yet — the normal case
+    existing = await fs.readdir(destination);
+  } catch (error) {
+    // Only a missing folder counts as new: a rollback removes new folders, and a file (ENOTDIR)
+    // or an unreadable folder at this path is not ours to remove.
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") return true;
+    if (code === "ENOTDIR") throw new Error(`Destination already exists: ${destination}`);
+    throw error;
   }
-  if (existing) {
-    const meaningful = existing.filter((n) => n !== ".DS_Store");
-    if (meaningful.length === 1 && meaningful[0] === OFFLOAD_FILE) {
-      throw new Error(`This repo is offloaded at ${plan.relativePath} — use “Restore Local Copy” instead.`);
-    }
-    if (meaningful.length > 0) {
-      throw new Error(`Destination already exists: ${plan.destination}`);
-    }
-    // git refuses to clone into a non-empty directory, so clear a stray .DS_Store.
-    await fs.rm(path.join(plan.destination, ".DS_Store"), { force: true });
+  const meaningful = existing.filter((n) => n !== ".DS_Store");
+  if (meaningful.length === 1 && meaningful[0] === OFFLOAD_FILE) {
+    throw new Error(`This repo is offloaded at ${relativePath} — use “Restore Local Copy” instead.`);
   }
+  if (meaningful.length > 0) {
+    throw new Error(`Destination already exists: ${destination}`);
+  }
+  await fs.rm(path.join(destination, ".DS_Store"), { force: true });
+  return false;
+}
+
+export async function cloneRepo(plan: ClonePlan): Promise<void> {
+  await prepareDestination(plan.destination, plan.relativePath);
   await fs.mkdir(path.dirname(plan.destination), { recursive: true });
   await git(path.dirname(plan.destination), ["clone", "--", plan.url, plan.destination], { timeoutMs: 15 * 60_000 });
 }
@@ -146,15 +158,21 @@ export async function pruneEmptyParents(root: string, from: string): Promise<voi
   }
 }
 
+/** relocateRepo only moves into a path that does not exist at all. */
+export async function assertRelocationTarget(target: string): Promise<void> {
+  try {
+    await fs.stat(target);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+    throw error;
+  }
+  throw new Error(`Target already exists: ${target}`);
+}
+
 /** Move a repo to the location its origin URL implies. Returns the new absolute path. */
 export async function relocateRepo(root: string, repo: Repo, targetRelativePath: string): Promise<string> {
   const target = path.join(root, targetRelativePath);
-  try {
-    await fs.stat(target);
-    throw new Error(`Target already exists: ${target}`);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-  }
+  await assertRelocationTarget(target);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.rename(repo.fullPath, target);
   await pruneEmptyParents(root, repo.fullPath);
