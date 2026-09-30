@@ -135,4 +135,5 @@ The extension targets the Raycast Store, so these are hard requirements, not pre
 - US English only, no localization, no external analytics or telemetry of any kind.
 - `assets/` is for runtime images only (`icon.png`, 512×512, legible on light and dark); keep it free of unused files. README media goes in a top-level `media/` folder.
 - `metadata/` holds 2000×1250 PNG store screenshots (three to six), captured with Raycast's Window Capture in development mode with “Save to Metadata” ticked. It is macOS-only work and cannot be produced from the devcontainer.
+- The README's screenshots are copies of the store screenshots in `media/` under descriptive names (git stores identical files once); re-copy them whenever `metadata/` changes.
 - The changelog entry for an unreleased change uses the `{PR_MERGE_DATE}` placeholder instead of a literal date.

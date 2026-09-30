@@ -21,6 +21,14 @@ Reponizer keeps a large, structured git repository folder organized. It works wi
 - **Menu bar health check** *(optional)* — a quiet counter of repositories that need attention
 - **Quick actions** — open in your editor, terminal, Finder, or on the remote host's website; copy paths and URLs; move repos to the Trash
 
+## Screenshots
+
+![Search Repositories with the detail panel and the action panel of a repository](media/search-repositories.png)
+
+![Reponizer commands in Raycast's root search while Fetch All runs in the background](media/commands.png)
+
+![Clone Repository form with the URL, protocol, and destination preview](media/clone-repository.png)
+
 ## Setup
 
 Reponizer works out of the box if your repositories live in `~/repos` in a `host/owner/repo` layout. Otherwise, open any Reponizer command, press `⌘ ,`, and set the **Repositories Root**.
